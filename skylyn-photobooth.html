@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Skylyn's Party">
+<title>🍦 Skylyn's Birthday Photobooth</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #FF6EB4;
+    --pink-light: #FFB3D9;
+    --pink-pale: #FFE5F3;
+    --blue: #5BB8F5;
+    --blue-light: #A8D8FF;
+    --blue-pale: #DCF0FF;
+    --yellow: #FFD93D;
+    --yellow-light: #FFE97A;
+    --yellow-pale: #FFF8DC;
+    --purple: #B983FF;
+    --purple-light: #D4AAFF;
+    --purple-pale: #F0E0FF;
+    --mint: #7FEBBF;
+    --white: #FFFAF8;
+    --text-dark: #3D2C5E;
+    --radius: 24px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--white);
+    font-family: 'Quicksand', sans-serif;
+    color: var(--text-dark);
+    touch-action: pan-y;
+  }
+
+  /* ── Decorative sprinkles background ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      radial-gradient(circle at 10% 15%, var(--pink-pale) 0%, transparent 45%),
+      radial-gradient(circle at 90% 10%, var(--blue-pale) 0%, transparent 40%),
+      radial-gradient(circle at 50% 95%, var(--yellow-pale) 0%, transparent 50%),
+      radial-gradient(circle at 85% 85%, var(--purple-pale) 0%, transparent 45%);
+    pointer-events: none;
+  }
+
+  /* ── Screens ── */
+  .screen {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px 16px;
+    overflow: hidden;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.96); }
+
+  /* ── Welcome Screen ── */
+  #welcome {
+    gap: 10px;
+    text-align: center;
+  }
+
+  .banner {
+    background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 50%, var(--blue) 100%);
+    border-radius: 28px;
+    padding: 20px 28px;
+    color: white;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(185, 131, 255, 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .banner::before {
+    content: '🍦🍨🍡';
+    position: absolute; top: -8px; right: -8px;
+    font-size: 40px; opacity: 0.25;
+    transform: rotate(20deg);
+  }
+  .banner h1 {
+    font-family: 'Baloo 2', cursive;
+    font-size: 32px; font-weight: 800;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    line-height: 1.1;
+  }
+  .banner .subtitle {
+    font-size: 15px; font-weight: 600;
+    margin-top: 6px; opacity: 0.92;
+  }
+  .banner .date-badge {
+    display: inline-block;
+    margin-top: 10px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .sprinkle-row {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    margin: 4px 0;
+  }
+  .sprinkle-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pill-pink { background: var(--pink-pale); color: var(--pink); }
+  .pill-blue { background: var(--blue-pale); color: #3A8FD6; }
+  .pill-yellow { background: var(--yellow-pale); color: #C8920A; }
+  .pill-purple { background: var(--purple-pale); color: #8A52CC; }
+
+  .big-btn {
+    width: 100%; max-width: 300px;
+    padding: 18px 28px;
+    border: none; outline: none; cursor: pointer;
+    border-radius: 50px;
+    font-family: 'Baloo 2', cursive;
+    font-size: 22px; font-weight: 800;
+    color: white;
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    box-shadow: 0 6px 24px rgba(255, 110, 180, 0.45);
+    transition: transform 0.12s, box-shadow 0.12s;
+    -webkit-appearance: none;
+  }
+  .big-btn:active { transform: scale(0.96); box-shadow: 0 3px 12px rgba(255,110,180,0.3); }
+
+  /* ── Camera Screen ── */
+  #camera { background: #000; padding: 0; }
+
+  .cam-header {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+    padding: env(safe-area-inset-top, 16px) 16px 12px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .cam-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 18px; font-weight: 800; color: white;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+  .shot-counter {
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: white; border-radius: 20px; padding: 4px 14px;
+    font-size: 14px; font-weight: 700;
+  }
+
+  #videoEl {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .cam-overlay {
+    position: absolute; inset: 0; z-index: 15;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 20px);
+    pointer-events: none;
+  }
+
+  .frame-decoration {
+    position: absolute; inset: 0; z-index: 16;
+    pointer-events: none;
+  }
+  .frame-corner {
+    position: absolute; width: 60px; height: 60px;
+    border: 5px solid rgba(255,255,255,0.6);
+    border-radius: 8px;
+  }
+  .fc-tl { top: 80px; left: 16px; border-right: none; border-bottom: none; }
+  .fc-tr { top: 80px; right: 16px; border-left: none; border-bottom: none; }
+  .fc-bl { bottom: 140px; left: 16px; border-right: none; border-top: none; }
+  .fc-br { bottom: 140px; right: 16px; border-left: none; border-top: none; }
+
+  .timer-ring-wrap {
+    pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .timer-ring-wrap.hidden { display: none; }
+  .timer-number {
+    font-family: 'Baloo 2', cursive;
+    font-size: 64px; font-weight: 800;
+    color: white;
+    text-shadow: 0 0 20px rgba(255,110,180,0.8), 0 2px 8px rgba(0,0,0,0.6);
+    animation: timerPulse 1s ease-in-out infinite;
+    line-height: 1;
+  }
+  @keyframes timerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
+
+  .shutter-area {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    pointer-events: all;
+  }
+  .shutter-hint {
+    color: rgba(255,255,255,0.85); font-size: 14px; font-weight: 600;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+  .shutter-btn {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 5px solid white;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s, background 0.1s;
+    -webkit-appearance: none;
+  }
+  .shutter-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.5); }
+  .shutter-inner {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    box-shadow: 0 0 20px rgba(185,131,255,0.6);
+  }
+  .shutter-btn.counting { pointer-events: none; opacity: 0.5; }
+
+  /* Flash overlay */
+  #flashOverlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: white;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+  #flashOverlay.flash { opacity: 1; }
+
+  /* ── Preview / Gallery Screen ── */
+  #gallery { padding: 0; }
+
+  .gallery-header {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+    padding: env(safe-area-inset-top, 16px) 16px 12px;
+    background: linear-gradient(to bottom, var(--white) 60%, transparent);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .gallery-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 22px; font-weight: 800;
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .gallery-sub {
+    font-size: 13px; font-weight: 600; color: #9882BB;
+  }
+
+  .strip-scroll {
+    width: 100%; height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: y mandatory;
+    padding-top: 90px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 120px);
+  }
+
+  .photo-slide {
+    scroll-snap-align: start;
+    width: 100%;
+    min-height: calc(100vh - 90px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 20px;
+    gap: 12px;
+  }
+
+  .photo-frame {
+    position: relative;
+    width: 100%;
+    max-width: 340px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(185,131,255,0.35);
+  }
+  .photo-frame img {
+    width: 100%; display: block;
+    border-radius: 20px;
+  }
+  .photo-sticker {
+    position: absolute;
+    font-size: 28px;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+
+  .photo-label {
+    font-family: 'Baloo 2', cursive;
+    font-size: 16px; font-weight: 700;
+    color: var(--purple);
+  }
+
+  .action-row {
+    display: flex; gap: 12px; width: 100%; max-width: 340px;
+  }
+  .action-btn {
+    flex: 1;
+    padding: 13px 8px;
+    border: none; outline: none; cursor: pointer;
+    border-radius: 18px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 14px; font-weight: 700;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    -webkit-appearance: none;
+  }
+  .action-btn:active { transform: scale(0.95); }
+  .action-btn .btn-icon { font-size: 20px; }
+
+  .btn-save {
+    background: linear-gradient(135deg, var(--blue-light), var(--blue));
+    color: white;
+    box-shadow: 0 4px 16px rgba(91,184,245,0.4);
+  }
+  .btn-share {
+    background: linear-gradient(135deg, var(--yellow-light), var(--yellow));
+    color: var(--text-dark);
+    box-shadow: 0 4px 16px rgba(255,217,61,0.4);
+  }
+  .btn-share-all {
+    background: linear-gradient(135deg, var(--pink-light), var(--pink));
+    color: white;
+    box-shadow: 0 4px 16px rgba(255,110,180,0.4);
+  }
+
+  .gallery-footer {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+    padding: 12px 20px calc(env(safe-area-inset-bottom, 20px) + 12px);
+    background: linear-gradient(to top, var(--white) 60%, transparent);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+
+  .retake-btn {
+    width: 100%; max-width: 300px;
+    padding: 15px;
+    border: none; outline: none; cursor: pointer;
+    border-radius: 50px;
+    font-family: 'Baloo 2', cursive;
+    font-size: 18px; font-weight: 800;
+    color: white;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    box-shadow: 0 5px 20px rgba(185,131,255,0.45);
+    transition: transform 0.12s;
+    -webkit-appearance: none;
+  }
+  .retake-btn:active { transform: scale(0.96); }
+
+  .save-all-btn {
+    width: 100%; max-width: 300px;
+    padding: 13px;
+    border: none; outline: none; cursor: pointer;
+    border-radius: 50px;
+    font-family: 'Baloo 2', cursive;
+    font-size: 16px; font-weight: 800;
+    color: white;
+    background: linear-gradient(135deg, var(--blue), var(--mint));
+    box-shadow: 0 4px 16px rgba(91,184,245,0.4);
+    transition: transform 0.12s;
+    -webkit-appearance: none;
+  }
+  .save-all-btn:active { transform: scale(0.96); }
+
+  /* Dot indicators */
+  .dot-row {
+    display: flex; gap: 8px; justify-content: center;
+    margin-top: 4px;
+  }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--purple-light);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dot.active {
+    background: var(--purple);
+    transform: scale(1.3);
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text-dark); color: white;
+    padding: 10px 24px; border-radius: 30px;
+    font-size: 14px; font-weight: 600;
+    z-index: 9999;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Confetti canvas */
+  #confettiCanvas {
+    position: fixed; inset: 0; z-index: 9998;
+    pointer-events: none;
+  }
+
+  /* Scrollbar hidden */
+  .strip-scroll::-webkit-scrollbar { display: none; }
+
+  /* Sticker positions for each frame */
+  .sticker-0 { top: 8px; right: 10px; }
+  .sticker-1 { top: 8px; left: 10px; }
+  .sticker-2 { bottom: 8px; right: 12px; }
+  .sticker-3 { bottom: 8px; left: 8px; }
+
+  /* Ice cream cone watermark on photos */
+  .photo-stamp {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(61, 44, 94, 0.75), transparent);
+    padding: 20px 12px 10px;
+    text-align: center;
+    color: white;
+    font-family: 'Baloo 2', cursive;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  /* Permission overlay */
+  #permOverlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(61,44,94,0.85);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 32px 24px;
+    gap: 16px;
+    text-align: center;
+  }
+  #permOverlay.hidden { display: none; }
+  #permOverlay h2 {
+    font-family: 'Baloo 2', cursive;
+    font-size: 26px; font-weight: 800; color: white;
+  }
+  #permOverlay p {
+    color: rgba(255,255,255,0.85); font-size: 15px; font-weight: 600; line-height: 1.5;
+  }
+  #permOverlay .perm-icon { font-size: 56px; }
+</style>
+</head>
+<body>
+
+<!-- Flash overlay -->
+<div id="flashOverlay"></div>
+
+<!-- Confetti canvas -->
+<canvas id="confettiCanvas"></canvas>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Camera permission overlay -->
+<div id="permOverlay" class="hidden">
+  <div class="perm-icon">📷</div>
+  <h2>Camera Access</h2>
+  <p>Skylyn's Photobooth needs camera access to take your pictures!</p>
+  <button class="big-btn" onclick="requestCamera()">Allow Camera 🎀</button>
+</div>
+
+<!-- ══════════════ WELCOME SCREEN ══════════════ -->
+<div class="screen" id="welcome">
+  <div class="banner">
+    <h1>🍦 Skylyn's<br>Birthday Bash!</h1>
+    <div class="subtitle">✨ Photo Booth ✨</div>
+    <div class="date-badge">📅 Saturday, April 25th, 2026</div>
+  </div>
+
+  <div class="sprinkle-row">
+    <div class="sprinkle-pill pill-pink">🍓 3 Photos</div>
+    <div class="sprinkle-pill pill-blue">⏱ 5 Second Timer</div>
+  </div>
+  <div class="sprinkle-row">
+    <div class="sprinkle-pill pill-yellow">💾 Auto-Save</div>
+    <div class="sprinkle-pill pill-purple">📤 Share</div>
+  </div>
+
+  <button class="big-btn" id="startBtn" onclick="startBooth()">
+    🍨 Start the Fun!
+  </button>
+
+  <div style="font-size: 13px; font-weight: 600; color: #9882BB; text-align:center; margin-top: 4px; max-width: 280px; line-height: 1.5;">
+    Strike a pose & smile for the camera! 📸
+  </div>
+</div>
+
+<!-- ══════════════ CAMERA SCREEN ══════════════ -->
+<div class="screen hidden" id="camera" style="padding:0; background:#000;">
+  <video id="videoEl" autoplay playsinline muted></video>
+
+  <div class="cam-header">
+    <div class="cam-title">🍦 Skylyn's Booth</div>
+    <div class="shot-counter" id="shotCounter">Photo 1 of 3</div>
+  </div>
+
+  <div class="frame-decoration">
+    <div class="frame-corner fc-tl"></div>
+    <div class="frame-corner fc-tr"></div>
+    <div class="frame-corner fc-bl"></div>
+    <div class="frame-corner fc-br"></div>
+  </div>
+
+  <div class="cam-overlay">
+    <div class="timer-ring-wrap hidden" id="timerWrap">
+      <div class="timer-number" id="timerNum">5</div>
+    </div>
+    <div class="shutter-area">
+      <div class="shutter-hint" id="shutterHint">Tap to take photo 📸</div>
+      <button class="shutter-btn" id="shutterBtn" onclick="startCountdown()">
+        <div class="shutter-inner"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ GALLERY SCREEN ══════════════ -->
+<div class="screen hidden" id="gallery" style="padding:0;">
+  <div class="gallery-header">
+    <div class="gallery-title">🍦 Your Party Pics!</div>
+    <div class="gallery-sub">Scroll to see all 3 photos • Swipe up ↑</div>
+  </div>
+
+  <div class="strip-scroll" id="stripScroll">
+    <!-- Photos injected here -->
+  </div>
+
+  <div class="dot-row" id="dotRow" style="position:absolute; top: 76px; left:0; right:0; z-index:25;"></div>
+
+  <div class="gallery-footer">
+    <button class="save-all-btn" onclick="saveAllPhotos()">💾 Save All to Photos</button>
+    <button class="retake-btn" onclick="retakeAll()">🔄 New Set of Photos</button>
+  </div>
+</div>
+
+<!-- Hidden canvas for capturing -->
+<canvas id="captureCanvas" style="display:none;"></canvas>
+
+<script>
+const TOTAL_PHOTOS = 3;
+const TIMER_SECS = 5;
+const STICKERS = [['🍦','🌸','⭐','🎀'],['🍧','🦋','💜','✨'],['🍨','🌈','💕','🎊']];
+
+let stream = null;
+let photoCount = 0;
+let photos = [];
+let timerInterval = null;
+let timerVal = TIMER_SECS;
+let isCounting = false;
+
+// ── Navigation ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+// ── Start booth ──
+async function startBooth() {
+  await requestCamera();
+}
+
+async function requestCamera() {
+  document.getElementById('permOverlay').classList.add('hidden');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
+      audio: false
+    });
+    const video = document.getElementById('videoEl');
+    video.srcObject = stream;
+    await video.play();
+    photoCount = 0;
+    photos = [];
+    updateShotCounter();
+    showScreen('camera');
+  } catch(e) {
+    document.getElementById('permOverlay').classList.remove('hidden');
+  }
+}
+
+function updateShotCounter() {
+  document.getElementById('shotCounter').textContent = `Photo ${photoCount + 1} of ${TOTAL_PHOTOS}`;
+  document.getElementById('shutterHint').textContent = photoCount === 0
+    ? 'Tap to take photo 📸'
+    : `${TOTAL_PHOTOS - photoCount} more to go! 🎉`;
+}
+
+// ── Countdown ──
+function startCountdown() {
+  if (isCounting) return;
+  isCounting = true;
+  timerVal = TIMER_SECS;
+  const btn = document.getElementById('shutterBtn');
+  const wrap = document.getElementById('timerWrap');
+  const num = document.getElementById('timerNum');
+  btn.classList.add('counting');
+  wrap.classList.remove('hidden');
+  num.textContent = timerVal;
+
+  timerInterval = setInterval(() => {
+    timerVal--;
+    num.textContent = timerVal;
+    if (timerVal <= 0) {
+      clearInterval(timerInterval);
+      wrap.classList.add('hidden');
+      capturePhoto();
+    }
+  }, 1000);
+}
+
+// ── Capture ──
+function capturePhoto() {
+  const flash = document.getElementById('flashOverlay');
+  flash.classList.add('flash');
+  setTimeout(() => flash.classList.remove('flash'), 300);
+
+  const video = document.getElementById('videoEl');
+  const canvas = document.getElementById('captureCanvas');
+  const W = video.videoWidth || 640;
+  const H = video.videoHeight || 480;
+
+  // Slight zoom crop for portrait
+  const crop = 0.9;
+  const sx = (W - W * crop) / 2;
+  const sy = (H - H * crop) / 2;
+  const sw = W * crop;
+  const sh = H * crop;
+
+  canvas.width = sw;
+  canvas.height = sh;
+  const ctx = canvas.getContext('2d');
+
+  // Mirror (selfie)
+  ctx.save();
+  ctx.translate(sw, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  ctx.restore();
+
+  // Stamp
+  ctx.fillStyle = 'rgba(61,44,94,0.65)';
+  ctx.fillRect(0, sh - 48, sw, 48);
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 18px Baloo 2, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`🍦 Skylyn's 4th Birthday • April 25, 2026 ✨`, sw / 2, sh - 18);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  photos.push(dataUrl);
+  photoCount++;
+  isCounting = false;
+  document.getElementById('shutterBtn').classList.remove('counting');
+
+  if (photoCount < TOTAL_PHOTOS) {
+    updateShotCounter();
+    showToast(`📸 Photo ${photoCount} captured! ${TOTAL_PHOTOS - photoCount} more!`);
+  } else {
+    // Done! Show gallery
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    buildGallery();
+    showScreen('gallery');
+    launchConfetti();
+    setTimeout(() => saveAllPhotos(), 800);
+  }
+}
+
+// ── Gallery ──
+function buildGallery() {
+  const scroll = document.getElementById('stripScroll');
+  scroll.innerHTML = '';
+  const dotRow = document.getElementById('dotRow');
+  dotRow.innerHTML = '';
+
+  photos.forEach((src, i) => {
+    const stickerSet = STICKERS[i] || STICKERS[0];
+    const labels = ['🌸 Strike a Pose!', '💜 Feeling Cute!', '🎉 Party Time!'];
+
+    const slide = document.createElement('div');
+    slide.className = 'photo-slide';
+    slide.dataset.index = i;
+
+    slide.innerHTML = `
+      <div class="photo-label">${labels[i]}</div>
+      <div class="photo-frame" style="position:relative;">
+        <img src="${src}" alt="Photo ${i+1}" style="width:100%; display:block; border-radius:20px;" />
+        <span class="photo-sticker sticker-0" style="font-size:28px;">${stickerSet[0]}</span>
+        <span class="photo-sticker sticker-1" style="font-size:24px;">${stickerSet[1]}</span>
+        <span class="photo-sticker sticker-2" style="font-size:26px;">${stickerSet[2]}</span>
+        <span class="photo-sticker sticker-3" style="font-size:22px;">${stickerSet[3]}</span>
+      </div>
+      <div class="action-row">
+        <button class="action-btn btn-save" onclick="savePhoto(${i})">
+          <span class="btn-icon">💾</span><span>Save</span>
+        </button>
+        <button class="action-btn btn-share" onclick="sharePhoto(${i})">
+          <span class="btn-icon">📤</span><span>Share</span>
+        </button>
+        <button class="action-btn btn-share-all" onclick="shareAll()">
+          <span class="btn-icon">🎀</span><span>All 3</span>
+        </button>
+      </div>
+    `;
+    scroll.appendChild(slide);
+
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.dataset.index = i;
+    dotRow.appendChild(dot);
+  });
+
+  // Scroll tracking for dots
+  scroll.addEventListener('scroll', () => {
+    const idx = Math.round(scroll.scrollTop / scroll.clientHeight);
+    document.querySelectorAll('.dot').forEach((d,i) => {
+      d.classList.toggle('active', i === idx);
+    });
+  }, { passive: true });
+}
+
+// ── Save single photo to Photos (iOS) ──
+async function savePhoto(index) {
+  const dataUrl = photos[index];
+  if (!dataUrl) return;
+
+  // iOS: create image element and use Share API or download link
+  try {
+    const blob = await dataUrlToBlob(dataUrl);
+    const file = new File([blob], `Skylyn-Birthday-Photo-${index+1}.jpg`, { type: 'image/jpeg' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: `Skylyn's Birthday Photo ${index+1}`,
+        text: '🍦 Happy Birthday Skylyn!'
+      });
+      showToast('✅ Photo saved!');
+    } else {
+      downloadPhoto(dataUrl, index);
+    }
+  } catch(e) {
+    downloadPhoto(dataUrl, index);
+  }
+}
+
+// ── Save all ──
+async function saveAllPhotos() {
+  if (photos.length === 0) return;
+  try {
+    const files = await Promise.all(photos.map(async (url, i) => {
+      const blob = await dataUrlToBlob(url);
+      return new File([blob], `Skylyn-Birthday-Photo-${i+1}.jpg`, { type: 'image/jpeg' });
+    }));
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({
+        files,
+        title: "Skylyn's Birthday Photos 🍦",
+        text: '🎉 Happy 4th Birthday Skylyn! April 25, 2026 ✨'
+      });
+      showToast('🎉 All photos shared!');
+    } else {
+      // Fallback: download each
+      photos.forEach((url, i) => downloadPhoto(url, i));
+      showToast('💾 Photos downloading!');
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      photos.forEach((url, i) => downloadPhoto(url, i));
+    }
+  }
+}
+
+// ── Share single ──
+async function sharePhoto(index) {
+  const dataUrl = photos[index];
+  if (!dataUrl) return;
+  try {
+    const blob = await dataUrlToBlob(dataUrl);
+    const file = new File([blob], `Skylyn-Birthday-Photo-${index+1}.jpg`, { type: 'image/jpeg' });
+    if (navigator.share) {
+      await navigator.share({
+        files: [file],
+        title: `Skylyn's Birthday Photo`,
+        text: `🍦 Photo ${index+1} from Skylyn's 4th Birthday party! April 25, 2026 🎉`
+      });
+    } else {
+      downloadPhoto(dataUrl, index);
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') downloadPhoto(dataUrl, index);
+  }
+}
+
+// ── Share all 3 ──
+async function shareAll() {
+  await saveAllPhotos();
+}
+
+function downloadPhoto(dataUrl, index) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = `Skylyn-Birthday-Photo-${index+1}.jpg`;
+  a.click();
+}
+
+function dataUrlToBlob(dataUrl) {
+  return new Promise(resolve => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    resolve(new Blob([u8arr], { type: mime }));
+  });
+}
+
+// ── Retake ──
+function retakeAll() {
+  photoCount = 0;
+  photos = [];
+  startBooth();
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Confetti ──
+function launchConfetti() {
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = ['#FF6EB4','#B983FF','#5BB8F5','#FFD93D','#7FEBBF','#FF99CC'];
+  const pieces = Array.from({ length: 80 }, () => ({
+    x: Math.random() * canvas.width,
+    y: -10 - Math.random() * 100,
+    r: 4 + Math.random() * 5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    vx: (Math.random() - 0.5) * 3,
+    vy: 2 + Math.random() * 3,
+    rot: Math.random() * Math.PI * 2,
+    vr: (Math.random() - 0.5) * 0.2,
+    shape: Math.random() > 0.5 ? 'circle' : 'rect',
+    life: 1
+  }));
+
+  let frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      p.vy += 0.05;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - (p.y / canvas.height));
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      if (p.shape === 'circle') {
+        ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillRect(-p.r, -p.r/2, p.r*2, p.r);
+      }
+      ctx.restore();
+    });
+    frame++;
+    if (frame < 140) requestAnimationFrame(animate);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  animate();
+}
+
+// Fix viewport for iOS
+window.addEventListener('resize', () => {
+  document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+});
+document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+</script>
+</body>
+</html>
